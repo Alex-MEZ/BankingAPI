@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -19,7 +20,7 @@ public class AccountController {
     private AccountService accountService;
 
     @PostMapping
-    public ResponseEntity<Account> createAccount(@RequestBody CreateAccountRequest request) {
+    public ResponseEntity<Account> createAccount(@Valid @RequestBody CreateAccountRequest request) {
         return ResponseEntity.ok(accountService.createAccount(request));
     }
 
@@ -29,17 +30,17 @@ public class AccountController {
     }
 
     @PostMapping("/{id}/deposit")
-    public ResponseEntity<Account> deposit(@PathVariable Long id, @RequestBody TransactionRequest request) {
+    public ResponseEntity<Account> deposit(@PathVariable Long id, @Valid @RequestBody TransactionRequest request) {
         return ResponseEntity.ok(accountService.deposit(id, request));
     }
 
     @PostMapping("/{id}/withdraw")
-    public ResponseEntity<Account> withdraw(@PathVariable Long id, @RequestBody TransactionRequest request) {
+    public ResponseEntity<Account> withdraw(@PathVariable Long id, @Valid @RequestBody TransactionRequest request) {
         return ResponseEntity.ok(accountService.withdraw(id, request));
     }
 
     @PostMapping("/transfer")
-    public ResponseEntity<Void> transfer(@RequestBody TransferRequest request) {
+    public ResponseEntity<Void> transfer(@Valid @RequestBody TransferRequest request) {
         accountService.transfer(request);
         return ResponseEntity.ok().build();
     }
