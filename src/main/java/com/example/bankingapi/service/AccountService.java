@@ -36,7 +36,10 @@ public class AccountService {
     }
 
     public Account deposit(Long id, TransactionRequest request) {
-        Account account = accountRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Account not found"));
+        if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Сумма депозита должна быть больше нуля");
+        }
+        Account account = accountRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Аккаунт не найден"));
         account.setBalance(account.getBalance().add(request.getAmount()));
         accountRepository.save(account);
         saveTransaction(id, request.getAmount(), "DEPOSIT");
@@ -44,9 +47,15 @@ public class AccountService {
     }
 
     public Account withdraw(Long id, TransactionRequest request) {
-        Account account = accountRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Account not found"));
+        if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Сумма снятия должна быть больше нуля");
+        }
+        Account account = accountRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Аккаунт не найден"));
         if (!account.getPin().equals(request.getPin())) {
-            throw new IllegalArgumentException("Invalid PIN");
+            throw new IllegalArgumentException("Неправильный PIN");
+        }
+        if (account.getBalance().compareTo(request.getAmount()) < 0) {
+            throw new IllegalArgumentException("Недостаточно средств на счете");
         }
         account.setBalance(account.getBalance().subtract(request.getAmount()));
         accountRepository.save(account);
@@ -55,17 +64,23 @@ public class AccountService {
     }
 
     public void transfer(TransferRequest request) {
-        Account sourceAccount = accountRepository.findById(request.getSourceAccountId()).orElseThrow(() -> new NoSuchElementException("Source account not found"));
-        Account destinationAccount = accountRepository.findById(request.getDestinationAccountId()).orElseThrow(() -> new NoSuchElementException("Destination account not found"));
+        if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Сумма перевода должна быть больше нуля");
+        }
+        Account sourceAccount = accountRepository.findById(request.getSourceAccountId()).orElseThrow(() -> new NoSuchElementException("Аккаунт отправителя не найден"));
+        Account destinationAccount = accountRepository.findById(request.getDestinationAccountId()).orElseThrow(() -> new NoSuchElementException("Аккаунт получателя не найден"));
         if (!sourceAccount.getPin().equals(request.getPin())) {
-            throw new IllegalArgumentException("Invalid PIN");
+            throw new IllegalArgumentException("Неправильный PIN");
+        }
+        if (sourceAccount.getBalance().compareTo(request.getAmount()) < 0) {
+            throw new IllegalArgumentException("Недостаточно средств на счете отправителя");
         }
         sourceAccount.setBalance(sourceAccount.getBalance().subtract(request.getAmount()));
         destinationAccount.setBalance(destinationAccount.getBalance().add(request.getAmount()));
         accountRepository.save(sourceAccount);
         accountRepository.save(destinationAccount);
-        saveTransaction(request.getSourceAccountId(), request.getAmount(), "TRANSFER");
-        saveTransaction(request.getDestinationAccountId(), request.getAmount(), "TRANSFER");
+        saveTransaction(request.getSourceAccountId(), request.getAmount(), "TRANSFER OUT");
+        saveTransaction(request.getDestinationAccountId(), request.getAmount(), "TRANSFER IN");
     }
 
     public List<Transaction> getTransactions(Long accountId) {

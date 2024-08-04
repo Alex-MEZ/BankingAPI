@@ -31,18 +31,30 @@ public class AccountController {
 
     @PostMapping("/{id}/deposit")
     public ResponseEntity<Account> deposit(@PathVariable Long id, @Valid @RequestBody TransactionRequest request) {
-        return ResponseEntity.ok(accountService.deposit(id, request));
+        try {
+            return ResponseEntity.ok(accountService.deposit(id, request));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
     }
 
     @PostMapping("/{id}/withdraw")
     public ResponseEntity<Account> withdraw(@PathVariable Long id, @Valid @RequestBody TransactionRequest request) {
-        return ResponseEntity.ok(accountService.withdraw(id, request));
+        try {
+            return ResponseEntity.ok(accountService.withdraw(id, request));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
     }
 
     @PostMapping("/transfer")
     public ResponseEntity<Void> transfer(@Valid @RequestBody TransferRequest request) {
-        accountService.transfer(request);
-        return ResponseEntity.ok().build();
+        try {
+            accountService.transfer(request);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @GetMapping("/{id}/transactions")
@@ -50,3 +62,4 @@ public class AccountController {
         return ResponseEntity.ok(accountService.getTransactions(id));
     }
 }
+
